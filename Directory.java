@@ -37,7 +37,7 @@ public class Directory {
 		// this byte array will be written back to disk
 		// note: only meaningfull directory information should be converted
 		// into bytes.
-		byte[] data = new byte[fnames.length]
+		byte[] data = new byte[fnames.length];
 		for (int i = 0; i < data.length; i++)
 			data[i] = (byte)fnames[i];
 		return data;
