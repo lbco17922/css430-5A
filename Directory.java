@@ -65,7 +65,7 @@ public class Directory {
 			else
 				fsizes[index] = maxChars;
 
-			for (int i = 0; i < fsizes[index].length; i++)
+			for (int i = 0; i < fsizes[index]; i++)
 				fnames[index][i] = filename.charAt(i);
 		}
 
@@ -82,7 +82,7 @@ public class Directory {
 			return false;
 		
 		fsizes[index] = 0;
-		fnames[index] = new char[];
+		fnames[index] = new char[maxChars];
 		return true;
 	}
 	
