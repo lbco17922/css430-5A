@@ -56,7 +56,7 @@ public class Directory {
 			}
 		}
 		if (index == -1)
-			SysLib.cerr("Error: Directory is full. Please delete something.")
+			SysLib.cerr("Error: Directory is full. Please delete something.");
 
 		// allocates accordingly
 		else {
