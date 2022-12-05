@@ -24,13 +24,24 @@ public class Directory {
 		else
 			max = fsizes.length;
 		
-		for (int i = 0; i < max; i++) {
-			fnames[i] = (char[])data[i];
-			fsizes[i] = fnames[i].length;
+		int intOffset = 0;
+		int charOffset = 0;
+		for (int i = 0; i < max; i++, intOffset += 4, charOffset += 2) {
+			fsizes[i] = SysLib.bytes2int(data, intOffset);
+			fnames[i] = new char[maxChars];	// placeholder (see below)
+
+			/*
+			not sure how we were supposed to figure:
+			- that the offset 4(fsizes.length - 1) is where the data for fnames
+			  start in data[]
+			- how much to increment offset for char, if not simply by 2 to match
+			  1 char = 2 bytes
+			*/
 		}
 
 		return max;
 
+		// Reference (can't copy):
 		/*
 		int offset = 0;
 		for ( int i = 0; i < fsizes.length; i++, offset+=4 )
@@ -48,14 +59,16 @@ public class Directory {
 		// note: only meaningfull directory information should be converted
 		// into bytes.
 		byte[] data = new byte[fnames.length];
-		for (int i = 0; i < data.length; i++)
-			data[i] = (byte)fnames[i];
+		//for (int i = 0; i < data.length; i++)
+			//data[i] = ;
 		return data;
+
+		// must understand roadblocks in bytes2directory() before attempting
 	}
 	
 	public short ialloc( String filename ) {
 		// filename is the one of a file to be created.
-		// allocates a new inode number for this filename
+		// allocates a new inode number for this filename (-1 if none)
 		
 		// finds the first empty index to populate
 		int index = -1;
@@ -81,8 +94,6 @@ public class Directory {
 
 		// returns index if successful, else -1
 		return (short)index;
-
-		// allocate Inode for filename (-1 if none)
 	}
 	
 	public boolean ifree( short iNumber ) {
@@ -96,19 +107,15 @@ public class Directory {
 		fsizes[index] = 0;
 		fnames[index] = new char[maxChars];
 		return true;
-
-		// deallocate Inode # iNumber
 	}
 	
 	public short namei( String filename ) {
-		// returns the inumber corresponding to this filename
+		// returns the inumber corresponding to this filename (-1 if none)
 		
 		for (int i = 0; i < fsizes.length; i++) {
 			if (fnames[i].toString() == filename)
 				return (short)i;
 		}
 		return (short)-1;
-
-		// find Inode for filename (-1 if none)
 	}
 }
