@@ -15,6 +15,10 @@ public class FileSystem {
     private Directory directory;
     private FileTable filetable;
 
+    final int SEEK_SET = 0;
+    final int SEEK_CUR = 1;
+    final int SEEK_END = 2;
+
     // constructor
     public FileSystem(int diskBlocks) {   // where is it called?
         superblock = new SuperBlock(diskBlocks);
@@ -40,7 +44,7 @@ public class FileSystem {
     }
     
     // opens the file specified by String filename in the given String mode
-    // allocates a new file descriptor "fd" to the file
+    //  allocates a new file descriptor "fd" to the file
     FileTableEntry open( String filename, String mode ) {
         // optional?  not mentioned by Prog5.pdf
 
@@ -72,48 +76,95 @@ public class FileSystem {
         */
     }
 
-    // reads up to buffer.length bytes from the file indicated by fd, starting
-    // at the position currently opinted to by the seek pointer
+    // reads up to Disk's buffer.length bytes from the file indicated by fd,
+    //  starting at the position currently indicated by the seek pointer
     int read( FileTableEntry ftEnt, byte[] buffer ) {
         /*
-        if (bytes remaining between curr seek pointer and end of file < buffer.length)
-            SysLib.read
+        SysLib.read
+            if (bytes remaining between curr seek pointer and end of file < buffer.length)
                 reads as many bytes as possible
                 puts them into the beginning of Disk's? buffer[]
-                increments the seek pointer by the number of bytes to have been read
-                return = number of bytes that have been read, or -1 if error
+            increments the seek pointer by the number of bytes to have been read
+            return = number of bytes that have been read, or -1 if error
         */
-    }
 
-    int write( FileTableEntry ftEnt, byte[] buffer ) {
-
-    }
-
-    int seek( FileTableEntry ftEnt, int offset, int whence ) {
-
-    }
-
-    int close( FileTableEntry ftEnt ) {
-        //if (successful)
+        //if (success)
             //return 0;
 
-        return -1;  // failure
+        return -1;  // error
+    }
+
+    // appends to the end or overwrites the contents of Disk's buffer[] to the
+    //  file indicated by fd, starting at the position currently indicated by
+    //  the seek pointer
+    int write( FileTableEntry ftEnt, byte[] buffer ) {
+        /*
+        SysLib.write
+            increments the seek pointer by the number of bytes to be written
+            returns = number of bytes to have been written, or -1 upon error
+        */
+
+        //if (success)
+            //return 0;
+
+        return -1;  // error
+    }
+
+    // updates the seek pointer corresponding to fd
+    int seek( FileTableEntry ftEnt, int offset, int whence ) {
+        /*
+        if (whence == SEEK_SET)
+            set the file's seek pointer to offset bytes from the beginning of the file
+        if (whence == SEEK_CUR)
+            set the file's seek pointer to += the offset (may be negative)
+        if (whence == SEEK_END)
+            set the file's seek pointer to the file size + the offset.
+             negative values or values beyond the file size set by the user
+             should be clamped by to 0 or the end of the file, respectively,
+             and still return a sucess
+        */
+
+        //if (success)
+            //return 0;
+
+        return -1;  // error
+    }
+
+    // closes the file corresponding to fd, commits all of its file
+    //  transactions and unregisters fd from the user file descriptor table of
+    //  the calling thread's TCB
+    int close( FileTableEntry ftEnt ) {
+        //if (success)
+            //return 0;
+
+        return -1;  // error
     }
     
+    // destroys the file specified by String filename.
     int delete( String filename ) {
-        //if (successful)
+        /*
+        if (currently open)
+            wait until the last open of it is closed before deletion
+            prevents additional openings while waiting
+        */
+        
+        //if (success)
             //return 0;
 
-        return -1;  // failure
+        return -1;  // error
     }
 
+    // returns the size in bytes of the file indicated by fd
     int fsize( FileTableEntry ftEnt ) {
+        //if (success)
+            //return 0;
 
+        return -1;  // error
     }
 
     // References
     // note that format(), close(), fsize(), and delete() all return
-    // boolean here, but are described as returning int in Prog5.pdf.
+    //  boolean here, but are described as returning int in Prog5.pdf.
     /*
     private SuperBlock superblock;
     private Directory directory;
