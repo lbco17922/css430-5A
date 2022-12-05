@@ -1,3 +1,10 @@
+/*
+Part of CSS 430 Program 5: File System
+	Boilerplate provided in Prog5.pdf.
+	Implemented by Jaimi Chong.
+	Last edited on 12/04/22.
+*/
+
 public class Directory {
 	private static int maxChars = 30;	// max characters of each file name
 	
