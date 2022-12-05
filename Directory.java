@@ -32,8 +32,8 @@ public class Directory {
 			fnames[i] = new char[maxChars];	// placeholder (see below)
 
 			/*
-			not sure how we were supposed to figure:
-			- that the offset 4(fsizes.length - 1) is where the data for fnames
+			Dependent on FileSystem.java implementation in order to figure:
+			- why the offset 4(fsizes.length - 1) is where the data for fnames
 			  start in data[]
 			- how much to increment offset for char, if not simply by 2 to match
 			  1 char = 2 bytes
@@ -65,7 +65,7 @@ public class Directory {
 			//data[i] = ;
 		return data;
 
-		// must understand roadblocks in bytes2directory() before attempting
+		// Dependent on FileSystem.java implementation (see bytes2directory() comments)
 	}
 	
 	public short ialloc( String filename ) {
