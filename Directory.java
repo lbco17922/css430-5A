@@ -30,6 +30,16 @@ public class Directory {
 		}
 
 		return max;
+
+		/*
+		int offset = 0;
+		for ( int i = 0; i < fsizes.length; i++, offset+=4 )
+			fsizes[i] = SysLib.bytes2int( data, offset );
+		for ( int i = 0; i < fnames.length; i++, offset += maxChars * 2 ) {
+			String fname = new String( data, offset, maxChars * 2 );
+			fname.getChars( 0, fsizes[i], fnames[i], 0 );
+		}
+		*/
 	}
 	
 	public byte[] directory2bytes( ) {
@@ -71,6 +81,8 @@ public class Directory {
 
 		// returns index if successful, else -1
 		return (short)index;
+
+		// allocate Inode for filename (-1 if none)
 	}
 	
 	public boolean ifree( short iNumber ) {
@@ -84,6 +96,8 @@ public class Directory {
 		fsizes[index] = 0;
 		fnames[index] = new char[maxChars];
 		return true;
+
+		// deallocate Inode # iNumber
 	}
 	
 	public short namei( String filename ) {
@@ -94,5 +108,7 @@ public class Directory {
 				return (short)i;
 		}
 		return (short)-1;
+
+		// find Inode for filename (-1 if none)
 	}
 }
