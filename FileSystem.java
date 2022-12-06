@@ -46,8 +46,6 @@ public class FileSystem {
     // opens the file specified by String filename in the given String mode
     //  allocates a new file descriptor "fd" to the file
     FileTableEntry open( String filename, String mode ) {
-        // optional?  not mentioned by Prog5.pdf
-
         /*
         r   = read only
         w   = write only
