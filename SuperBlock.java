@@ -6,16 +6,14 @@ Acknowledgements:
 */
 
 public class SuperBlock {
-    //byte[] blocks;              // byte array storing all the three data below
     public int totalBlocks;     // the number of disk blocks
     public int totalInodes;     // the number of inodes
     public int freeList;        // the block number of the free list's head (zyBooks "free-frame list")
-    //private final int defaultInodeBlocks = 64;  // optional; only appears in constr format() call
+    //private final int defaultInodeBlocks = 64;  // optional? only appears in constr format() call
     Inode[] inodes;             // probably move this to FileSystem later
 
     public SuperBlock(int diskBlocks) {
         byte[] blocks = new byte[Disk.blockSize];
-        //blocks = new byte[Disk.blockSize];
         SysLib.rawread( 0, blocks );
         totalBlocks = SysLib.bytes2int(blocks, 0);
         totalInodes = SysLib.bytes2int(blocks, 4);  // figure how we know offset
@@ -33,9 +31,6 @@ public class SuperBlock {
     }
 
     // write totalBlocks, totalInodes, and freeList to Disk's data[]
-    // if totalBlocks, totalInodes, and freeList don't change, we might just be
-    //  to store byte[] blocks as a global variable from the constructor and
-    //  simply pass it to SysLib.rawwrite() in one line.
     void sync() {
         byte[] blocks = new byte[Disk.blockSize];
         SysLib.int2bytes(totalBlocks, blocks, 0);
