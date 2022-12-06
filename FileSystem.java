@@ -1,10 +1,3 @@
-/*
-Acknowledgements:
-	Boilerplate provided in Prog5.pdf by Prof. Robert Palmer
-	Implemented by Jaimi Chong and Lionel Cheng (probably both of us; big file)
-	Last edited on 12/05/22
-*/
-
 public class FileSystem {
     // required system calls
     /*
