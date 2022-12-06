@@ -14,8 +14,8 @@ public class Directory {
 	
 	public Directory( int maxInumber ) {		// directory constructor
 		fsizes = new int[maxInumber]; 			// maxInumber = max files
-		for ( int i = 0; i < maxInumber; i++ )
-			fsizes[i] = 0;					// all file size initialized to 0
+		for ( int s = 0; s < maxInumber; s++ )
+			fsizes[s] = 0;					// all file size initialized to 0
 			fnames = new char[maxInumber][maxChars];
 			String root = "/";				// entry(inode) 0 is "/"
 			fsizes[0] = root.length( );		// fsizes[0] is the size of "/".
@@ -34,9 +34,9 @@ public class Directory {
 		
 		int intOffset = 0;
 		int charOffset = 0;
-		for (int i = 0; i < max; i++, intOffset += 4, charOffset += 2) {
-			fsizes[i] = SysLib.bytes2int(data, intOffset);
-			fnames[i] = new char[maxChars];	// placeholder (see below)
+		for (int s = 0; s < max; s++, intOffset += 4, charOffset += 2) {
+			fsizes[s] = SysLib.bytes2int(data, intOffset);
+			fnames[s] = new char[maxChars];	// placeholder (see below)
 
 			/*
 			Dependent on FileSystem.java implementation in order to figure:
@@ -52,11 +52,11 @@ public class Directory {
 		// Reference (can't copy):
 		/*
 		int offset = 0;
-		for ( int i = 0; i < fsizes.length; i++, offset+=4 )
-			fsizes[i] = SysLib.bytes2int( data, offset );
-		for ( int i = 0; i < fnames.length; i++, offset += maxChars * 2 ) {
+		for ( int s = 0; s < fsizes.length; s++, offset+=4 )
+			fsizes[s] = SysLib.bytes2int( data, offset );
+		for ( int s = 0; s < fnames.length; s++, offset += maxChars * 2 ) {
 			String fname = new String( data, offset, maxChars * 2 );
-			fname.getChars( 0, fsizes[i], fnames[i], 0 );
+			fname.getChars( 0, fsizes[s], fnames[s], 0 );
 		}
 		*/
 	}
@@ -68,8 +68,8 @@ public class Directory {
 		// into bytes.
 
 		byte[] data = new byte[fnames.length];
-		//for (int i = 0; i < data.length; i++)
-			//data[i] = ;
+		//for (int s = 0; s < data.length; s++)
+			//data[s] = ;
 		return data;
 
 		// Dependent on FileSystem.java implementation (see bytes2directory() comments)
@@ -81,9 +81,9 @@ public class Directory {
 		
 		// finds the first empty iNumber to populate
 		short iNumber = -1;
-		for (short i = 0; i < fsizes.length; i++) {
-			if (fsizes[i] == 0) {
-				iNumber = i;
+		for (short s = 0; s < fsizes.length; s++) {
+			if (fsizes[s] == 0) {
+				iNumber = s;
 				break;
 			}
 		}
@@ -97,8 +97,8 @@ public class Directory {
 			else
 				fsizes[iNumber] = maxChars;
 
-			for (short i = 0; i < fsizes[iNumber]; i++)
-				fnames[iNumber][i] = filename.charAt(i);
+			for (short s = 0; s < fsizes[iNumber]; s++)
+				fnames[iNumber][s] = filename.charAt(s);
 		}
 
 		// returns iNumber if successful, else -1
@@ -120,9 +120,9 @@ public class Directory {
 	public short namei( String filename ) {
 		// returns the inumber corresponding to this filename (-1 if none)
 		
-		for (short i = 0; i < fsizes.length; i++) {
-			if (fnames[i].toString().equals(filename))
-				return i;
+		for (short s = 0; s < fsizes.length; s++) {
+			if (fnames[s].toString().equals(filename))
+				return s;
 		}
 		return -1;
 	}
