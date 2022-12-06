@@ -29,7 +29,7 @@ public class FileSystem {
     // constructor
     public FileSystem(int diskBlocks) {   // where is it called?
         superblock = new SuperBlock(diskBlocks);
-        directory = new Directory(superblock.inodeBlocks);
+        directory = new Directory(superblock.totalInodes);
         filetable = new FileTable(directory);
 
         // understanding of Directory stuff depends on familiarity with FileTable
