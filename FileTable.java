@@ -90,4 +90,14 @@ public class FileTable {
   {
      return table.isEmpty();
   }
+
+  public synchronized Inode retrieveInodeRef(short iNumber) {
+    for(int i = 0; i < this.table.size(); i++) {
+        FileTableEntry tempFte = table.elementAt(i);
+        if(tempFte.iNumber == iNumber) {
+            return tempFte.inode;
+        }
+    }
+    return null;
+  }
 }
