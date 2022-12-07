@@ -43,7 +43,7 @@ public class FileSystem {
         if(files > 0) {
             SysLib.format(files);
             this.directory = new Directory(files);
-            this.filetable = new FileStructureTable(this.directory);
+            this.filetable = new FileTable(this.directory);
             return 0;
         }
         //if (successful)
