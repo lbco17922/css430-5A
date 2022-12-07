@@ -20,62 +20,62 @@ public class FileSystem {
         directory = new Directory(superblock.totalInodes);
         filetable = new FileTable(directory);
 
-        // LIONEL:
-        // Finish writing...whatever is happening here lol
-        // Reference only; do NOT copy:
-        /*
+        FileTableEntry dir = open("/", "r");
 
-        // read the "/" file from disk
-        FileTableEntry dirEnt = open( "/", "r" );
-        int dirSize = fsize( dirEnt );
-        if (dirSize > 0 ) {
-            byte[] dirData = new byte[dirSize];
-            read( dirEnt, dirData );
-            directory.bytes2directory( dirData );
+        int dirSize = fsize(dir);
+        if(dirSize > 0) {
+            byte[] data = new byte[dirSize];
+            read(dir, data);
+            directory.bytes2directory(data);
         }
-        close( dirEnt );
-
-        */
+        close(dir);
+        // understanding of Directory stuff depends on familiarity with FileTable
     }
 
     void sync() {
         // optional?  not mentioned by Prog5.pdf
-        // JAIMI:
-        //SysLib.sync();
     }
 
     // formats the contents of Disk.java's data[]
     // int files = max # of files to be created (i.e. # of inodes to be allocated)
     int format( int files ) {
-        // JAIMI:
-        SysLib.format(files);
+        //SysLib.format(files);   // need to implement in SysLib, and by extension Kernel
+        if(files > 0) {
+            SysLib.format(files);
+            this.directory = new Directory(files);
+            this.filetable = new FileStructureTable(this.directory);
+            return 0;
+        }
         //if (successful)
             //return 0;
-        return -1;
+        return -1;  // failure
     }
     
     // opens the file specified by String filename in the given String mode
     //  allocates a new file descriptor "fd" to the file
     FileTableEntry open( String filename, String mode ) {
         /*
-
         Modes:
             r   = read only
             w   = write only
             w+  = read/write
             a   = append
-
         */
 
         // LIONEL:
         // Given String mode, ensure SysLib.open() is called in the inner if statement under the right circumstances
             // JAIMI:
             // (see inner if statement)
-
+        fileTableEntry entry = fileTable.falloc(filename, mode);
+        if(mode.equals("w") && entry != null) {
+            if(!deallocAllBlocks(entry)) {
+                return null;
+            }
+        }
+        return entry;
         
         // Reference only; do NOT copy:
         /*
-
         FileTableEntry ftEnt = filetable.falloc( filename, mode );
         if ( mode.equals( "w" ) )   //  release all blocks belonging to this file
         if ( deallocAllBlocks( ftEnt ) == false ) {
@@ -83,9 +83,7 @@ public class FileSystem {
                 // Write the inner if statement contents; includes SysLib.open(filename), maybe more
                 return null;
             }
-
         return ftEnt; 
-
         */
     }
 
@@ -118,48 +116,59 @@ public class FileSystem {
 
     // updates the seek pointer corresponding to fd
     int seek( FileTableEntry ftEnt, int offset, int whence ) {
-        // LIONEL:
-        // Obtain int fd from FileTableEntry ftEnt
+        if(whence == SEEK_SET) {
+            ftEnt.seekPtr = offset;
+        } else if (whence == SEEK_CUR) {
+            ftEnt.seekPtr += offset;
+        } else if (whence == SEEK_END) {
+            ftEnt.seekPtr = fsize(ftEnt) + offset;
+        }
 
-        // JAIMI:
-        //SysLib.seek(fd, offset, whence)
-        //if (success)
-            //return 0;
-        return -1;
+        if(ftEnt.seekPtr > fsize(ftEnt)) {
+            ftEnt.seekPtr = fsize(ftEnt);
+        }
+        if(ftEnt.seekPtr < 0) {
+            ftEnt.seekPtr = 0;
+        }
+        return ftEnt.seekPtr;
     }
 
     // closes the file corresponding to fd, commits all of its file
     //  transactions and unregisters fd from the user file descriptor table of
     //  the calling thread's TCB
     int close( FileTableEntry ftEnt ) {
-        // LIONEL:
-        // obtain fd from ftEnt
-        
-        // JAIMI:
-        //SysLib.close(fd);
-        //if (success)
-            //return 0;
-        return -1;
+        if(ftEnt == null) {
+            return -1;
+        }
+        ftEnt.count--;
+        if(ftEnt.count <= 0) {
+            boolean successfulFree = this.filetable.ffree(ftEnt);
+        }
+        if(!successfulFree) {
+            return -1;
+        }
+        ftEnt.inode.toDisk(ftEnt.iNumber);
+        return 0;
     }
     
     // destroys the file specified by String filename.
     int delete( String filename ) {
-        // JAIMI:
-        SysLib.delete(filename);
-        //if (success)
-            //return 0;
+        short iNumberToDelete = this.directory.namei(filename);
+        if(iNumberToDelete < 0) { //filename DNE
+            return -1; 
+        } else {
+            Inode inode = this.filetable.retrieveInodeRef(iNumberToDelete); //Get respective inode for filename
+            inode.flag = 4; //Flag for pending delete
+            if(inode.count == 0) {
+                this.directory.ifree(iNumberToDelete); //if no threads share this entry, deallocate
+            }
+            return 0;
+        }
         return -1;
     }
 
     // returns the size in bytes of the file indicated by fd
     int fsize( FileTableEntry ftEnt ) {
-        // LIONEL:
-        // Obtain int fd from FileTableEntry ftEnt
-        
-        // JAIMI:
-        //SysLib.size(fd);
-        //if (success)
-            //return 0;
-        return -1;
+        return ftEnt.inode.length;
     }
 }
