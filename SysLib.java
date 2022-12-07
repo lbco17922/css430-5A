@@ -1,9 +1,19 @@
+/*
+Acknowledgements:
+	Boilerplate provided by Prof. Robert Palmer
+	"to be implemented in project" (Ctrl+F) implemented by Jaimi Chong
+	Last edited on 12/06/22
+*/
+
 import java.util.*; // SysLib_org.java
 
 public class SysLib {
-    public static int open(String filename ) {
+    // to be implemented in project:
+    // read()
+    // write()
+    public static int open(String filename, String mode ) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
-                 Kernel.OPEN, 0, filename );
+                 Kernel.OPEN, 0, new String[]{filename, mode} );
     }
     public static int close(int fd) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
@@ -26,6 +36,7 @@ public class SysLib {
 				 Kernel.FORMAT, 0, filename );
     }
 
+    // boilerplate:
     public static int exec( String args[] ) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
 				 Kernel.EXEC, 0, args );

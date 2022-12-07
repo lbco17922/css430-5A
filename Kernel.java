@@ -1,3 +1,10 @@
+/*
+Acknowledgements:
+	Boilerplate provided by Prof. Robert Palmer
+	"to be implemented in project" (Ctrl+F) implemented by Jaimi Chong
+	Last edited on 12/06/22
+*/
+
 import java.util.*;
 import java.lang.reflect.*;
 import java.io.*;
@@ -28,7 +35,7 @@ public class Kernel
     public final static int CFLUSH  = 13; // SysLib.cflush( )
 
     // System calls to be added in Project
-    public final static int OPEN    = 14; // SysLib.open( String fileName )
+    public final static int OPEN    = 14; // SysLib.open( String fileName, String mode )
     public final static int CLOSE   = 15; // SysLib.close( int fd )
     public final static int SIZE    = 16; // SysLib.size( int fd )
     public final static int SEEK    = 17; // SysLib.seek( int fd, int offest, 
@@ -49,7 +56,11 @@ public class Kernel
     private static Scheduler scheduler;
     private static Disk disk;
     private static Cache cache;
-
+	private static FileSystem fs;
+	
+	// Used to construct this thread's Disk disk and FileSystem fs
+	public final static int DISK_BLOCKS = 1000;
+	
     // Synchronized Queues
     private static SyncQueue waitQueue;  // for threads to wait for their child
     private static SyncQueue ioQueue;    // I/O queue
@@ -73,11 +84,14 @@ public class Kernel
 		scheduler.start( );
 		
 		// instantiate and start a disk
-		disk = new Disk( 1000 );
+		disk = new Disk( DISK_BLOCKS );
 		disk.start( );
 
 		// instantiate a cache memory
 		cache = new Cache( disk.blockSize, 10 );
+
+		// instantiate a file system
+		fs = new FileSystem(DISK_BLOCKS);
 
 		// instantiate synchronized queues
 		ioQueue = new SyncQueue( );
@@ -190,28 +204,39 @@ public class Kernel
 		cache.flush( );
 		return OK;
 	    case OPEN:    // to be implemented in project
-		/*
-        SysLib.open(filename, mode) // need to implement in SysLib, and by extension Kernel
-            if (not found in w, w+, or a)
-                create file
-            if (not found in r)
-                SysLib.open returns -1;
-            
-            if (successfully opened/created) {
-                use a file descriptor between the range 3 and 31, since
-                0-2 are already reserved for standard input, output, and error
-            }
+			// Reference only; do NOT copy:
+			/*
+			if ((myTcb = scheduler.getMyTcb()) == null)
+				return ERROR;
+			else {
+				String[] s = (String[]) args;
+				FileTableEntry ftEnt = fs.open(s[0], s[1]);
+				int fd = myTcb.getFd(ftEnt);
+				return fd;
+			}
+			*/
+			
+			/*
+			SysLib.open(filename, mode) // need to implement in SysLib, and by extension Kernel
+				if (not found in w, w+, or a)
+					create file
+				if (not found in r)
+					SysLib.open returns -1;
+				
+				if (successfully opened/created) {
+					use a file descriptor between the range 3 and 31, since
+					0-2 are already reserved for standard input, output, and error
+				}
 
-            if (calling thread's user file descriptor table is full) {
-                if (mode.equals("a"))
-                    seek pointer is initialized to the end of the file
-                else // (mode.equals("r") || mode.equals("w") || mode.equals("w+"))
-                    seek pointer is initialized to 0
+				if (calling thread's user file descriptor table is full) {
+					if (mode.equals("a"))
+						seek pointer is initialized to the end of the file
+					else // (mode.equals("r") || mode.equals("w") || mode.equals("w+"))
+						seek pointer is initialized to 0
 
-                SysLib.open returns -1;
-            }
-        */
-		return OK;
+					SysLib.open returns -1;
+				}
+			*/
 	    case CLOSE:   // to be implemented in project
 		return OK;
 	    case SIZE:    // to be implemented in project
