@@ -1,6 +1,31 @@
 import java.util.*; // SysLib_org.java
 
 public class SysLib {
+    public static int open(String filename ) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.OPEN, 0, filename );
+    }
+    public static int close(int fd) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.CLOSE, 0, fd );
+    }
+    public static int size(int fd) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.SIZE, 0, fd );
+    }
+    public static int seek(int fd, int offset, int whence) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.SIZE, 0, fd );
+    }
+    public static int format(int files) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+				 Kernel.FORMAT, 0, files );
+    }
+    public static int delete(String filename) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+				 Kernel.FORMAT, 0, filename );
+    }
+
     public static int exec( String args[] ) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
 				 Kernel.EXEC, 0, args );

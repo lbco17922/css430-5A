@@ -128,6 +128,14 @@ public class Kernel
 		return OK;
 	    case READ:
 		switch ( param ) {
+		/*
+        SysLib.cin()
+            if (bytes remaining between curr seek pointer and end of file < buffer.length)
+                reads as many bytes as possible
+                puts them into the beginning of Disk's? buffer[]
+            increments the seek pointer by the number of bytes to have been read
+            return = number of bytes that have been read, or -1 if error
+        */
 		case STDIN:
 		    try {
 			String s = input.readLine(); // read a keyboard input
@@ -155,6 +163,11 @@ public class Kernel
 		return ERROR;
 	    case WRITE:
 		switch ( param ) {
+		/*
+        SysLib.cout()
+            increments the seek pointer by the number of bytes to be written
+            returns = number of bytes to have been written, or -1 upon error
+        */
 		case STDIN:
 		    System.out.println( "threaOS: cannot write to System.in" );
 		    return ERROR;
@@ -177,16 +190,53 @@ public class Kernel
 		cache.flush( );
 		return OK;
 	    case OPEN:    // to be implemented in project
+		/*
+        SysLib.open(filename, mode) // need to implement in SysLib, and by extension Kernel
+            if (not found in w, w+, or a)
+                create file
+            if (not found in r)
+                SysLib.open returns -1;
+            
+            if (successfully opened/created) {
+                use a file descriptor between the range 3 and 31, since
+                0-2 are already reserved for standard input, output, and error
+            }
+
+            if (calling thread's user file descriptor table is full) {
+                if (mode.equals("a"))
+                    seek pointer is initialized to the end of the file
+                else // (mode.equals("r") || mode.equals("w") || mode.equals("w+"))
+                    seek pointer is initialized to 0
+
+                SysLib.open returns -1;
+            }
+        */
 		return OK;
 	    case CLOSE:   // to be implemented in project
 		return OK;
 	    case SIZE:    // to be implemented in project
 		return OK;
 	    case SEEK:    // to be implemented in project
+		/*
+        if (whence == SEEK_SET)
+            set the file's seek pointer to offset bytes from the beginning of the file
+        if (whence == SEEK_CUR)
+            set the file's seek pointer to += the offset (may be negative)
+        if (whence == SEEK_END)
+            set the file's seek pointer to the file size + the offset.
+             negative values or values beyond the file size set by the user
+             should be clamped by to 0 or the end of the file, respectively,
+             and still return a sucess
+        */
 		return OK;
 	    case FORMAT:  // to be implemented in project
 		return OK;
 	    case DELETE:  // to be implemented in project
+		/*
+        if (currently open)
+            wait until the last open of it is closed before deletion
+            prevents additional openings while waiting
+        */
 		return OK;
 	    }
 	    return ERROR;
