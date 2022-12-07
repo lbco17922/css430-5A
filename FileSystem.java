@@ -1,7 +1,7 @@
 /*
 Acknowledgements:
 	Boilerplate provided in Prog5.pdf by Prof. Robert Palmer
-	Implemented by Jaimi Chong and Lionel Cheng (probably both of us; big file)
+	Implemented by Jaimi Chong and Lionel Cheng
 	Last edited on 12/05/22
 */
 
@@ -29,6 +29,11 @@ public class FileSystem {
             directory.bytes2directory(data);
         }
         close(dir);
+    }
+
+    // needed for Kernel checks
+    Directory getDirectory() {
+        return directory;
     }
 
     void sync() {
@@ -61,13 +66,39 @@ public class FileSystem {
             a   = append
         */
 
-        FileTableEntry entry = filetable.falloc(filename, mode);
-        if(mode.equals("w") && entry != null) {
-            if(!deallocAllBlocks(entry)) {
+        FileTableEntry ftEnt = filetable.falloc(filename, mode);
+        if (mode.equals("w") && ftEnt != null) {
+            if(!deallocAllBlocks(ftEnt)) {
                 return null;
             }
         }
-        return entry;
+        return ftEnt;
+
+        FileTableEntry ftEnt = fileTable.falloc(filename, mode);
+        if (!mode.equals("r"))
+            return -1;
+        
+        /*
+        SysLib.open(filename, mode) // need to implement in SysLib, and by extension Kernel
+            if (not found in w, w+, or a)
+                create file
+            if (not found in r)
+                SysLib.open returns -1;
+            
+            if (successfully opened/created) {
+                use a file descriptor between the range 3 and 31, since
+                0-2 are already reserved for standard input, output, and error
+            }
+
+            if (calling thread's user file descriptor table is full) {
+                if (mode.equals("a"))
+                    seek pointer is initialized to the end of the file
+                else // (mode.equals("r") || mode.equals("w") || mode.equals("w+"))
+                    seek pointer is initialized to 0
+
+                SysLib.open returns -1;
+            }
+        */
     }
 
     // reads up to Disk's buffer.length bytes from the file indicated by fd,
