@@ -42,6 +42,8 @@ public class Kernel
                                           //              int whence )
     public final static int FORMAT  = 18; // SysLib.format( int files )
     public final static int DELETE  = 19; // SysLib.delete( String fileName )
+	public final static int FSREAD	= 20; // SysLib.read( int blkNumber, byte[] buffer )
+	public final static int FSWRITE	= 21; // SysLib.write( int blkNumber, byte[] buffer )
 
     // Predefined file descriptors
     public final static int STDIN  = 0;
@@ -56,9 +58,12 @@ public class Kernel
     private static Scheduler scheduler;
     private static Disk disk;
     private static Cache cache;
+
+	// System thread references to be added in Project
 	private static FileSystem fs;
+	private static Directory dir;
 	
-	// Used to construct this thread's Disk disk and FileSystem fs
+	// Global constant used to construct this thread's disk and fs
 	public final static int DISK_BLOCKS = 1000;
 	
     // Synchronized Queues
@@ -74,210 +79,250 @@ public class Kernel
 
     // The heart of Kernel
     public static int interrupt( int irq, int cmd, int param, Object args ) {
-	TCB myTcb;
-	switch( irq ) {
-	case INTERRUPT_SOFTWARE: // System calls
-	    switch( cmd ) { 
-	    case BOOT:
-		// instantiate and start a scheduler
-		scheduler = new Scheduler( ); 
-		scheduler.start( );
-		
-		// instantiate and start a disk
-		disk = new Disk( DISK_BLOCKS );
-		disk.start( );
+		TCB myTcb;
+		switch( irq ) {
+			case INTERRUPT_SOFTWARE: // System calls
+				switch( cmd ) { 
+					case BOOT:
+						// instantiate and start a scheduler
+						scheduler = new Scheduler( ); 
+						scheduler.start( );
+						
+						// instantiate and start a disk
+						disk = new Disk( DISK_BLOCKS );
+						disk.start( );
 
-		// instantiate a cache memory
-		cache = new Cache( disk.blockSize, 10 );
+						// instantiate a cache memory
+						cache = new Cache( disk.blockSize, 10 );
 
-		// instantiate a file system
-		fs = new FileSystem(DISK_BLOCKS);
+						// instantiate a file system
+						fs = new FileSystem(DISK_BLOCKS);
 
-		// instantiate synchronized queues
-		ioQueue = new SyncQueue( );
-		waitQueue = new SyncQueue( scheduler.getMaxThreads( ) );
-		return OK;
-	    case EXEC:
-		return sysExec( ( String[] )args );
-	    case WAIT:
-		if ( ( myTcb = scheduler.getMyTcb( ) ) != null ) {
-		    int myTid = myTcb.getTid( ); // get my thread ID
-		    return waitQueue.enqueueAndSleep( myTid ); //wait on my tid
-		    // woken up by my child thread
-		}
-		return ERROR;
-	    case EXIT:
-		if ( ( myTcb = scheduler.getMyTcb( ) ) != null ) {
-		    int myPid = myTcb.getPid( ); // get my parent ID
-		    int myTid = myTcb.getTid( ); // get my ID
-		    if ( myPid != -1 ) {
-			// wake up a thread waiting on my parent ID
-			waitQueue.dequeueAndWakeup( myPid, myTid );
-			// I'm terminated!
-			scheduler.deleteThread( );
-			return OK;
-		    }
-		}
-		return ERROR;
-	    case SLEEP:   // sleep a given period of milliseconds
-		scheduler.sleepThread( param ); // param = milliseconds
-		return OK;
-	    case RAWREAD: // read a block of data from disk
-		while ( disk.read( param, ( byte[] )args ) == false )
-		    ioQueue.enqueueAndSleep( COND_DISK_REQ );
-		while ( disk.testAndResetReady( ) == false )
-		    ioQueue.enqueueAndSleep( COND_DISK_FIN );
-		return OK;
-	    case RAWWRITE: // write a block of data to disk
-		while ( disk.write( param, ( byte[] )args ) == false )
-		    ioQueue.enqueueAndSleep( COND_DISK_REQ );
-		while ( disk.testAndResetReady( ) == false )
-		    ioQueue.enqueueAndSleep( COND_DISK_FIN );
-		return OK;
-	    case SYNC:     // synchronize disk data to a real file
-		while ( disk.sync( ) == false )
-		    ioQueue.enqueueAndSleep( COND_DISK_REQ );
-		while ( disk.testAndResetReady( ) == false )
-		    ioQueue.enqueueAndSleep( COND_DISK_FIN );
-		return OK;
-	    case READ:
-		switch ( param ) {
-		/*
-        SysLib.cin()
-            if (bytes remaining between curr seek pointer and end of file < buffer.length)
-                reads as many bytes as possible
-                puts them into the beginning of Disk's? buffer[]
-            increments the seek pointer by the number of bytes to have been read
-            return = number of bytes that have been read, or -1 if error
-        */
-		case STDIN:
-		    try {
-			String s = input.readLine(); // read a keyboard input
-			if ( s == null ) {
-			    return ERROR;
-			}
-			// prepare a read buffer
-			StringBuffer buf = ( StringBuffer )args;
+						// instantiate synchronized queues
+						ioQueue = new SyncQueue( );
+						waitQueue = new SyncQueue( scheduler.getMaxThreads( ) );
+						return OK;
 
-			// append the keyboard intput to this read buffer
-			buf.append( s ); 
+					case EXEC:
+						return sysExec( ( String[] )args );
 
-			// return the number of chars read from keyboard
-			return s.length( );
-		    } catch ( IOException e ) {
-			System.out.println( e );
-			return ERROR;
-		    }
-		case STDOUT:
-		case STDERR:
-		    System.out.println( "threaOS: caused read errors" );
-		    return ERROR;
-		}
-		// return FileSystem.read( param, byte args[] );
-		return ERROR;
-	    case WRITE:
-		switch ( param ) {
-		/*
-        SysLib.cout()
-            increments the seek pointer by the number of bytes to be written
-            returns = number of bytes to have been written, or -1 upon error
-        */
-		case STDIN:
-		    System.out.println( "threaOS: cannot write to System.in" );
-		    return ERROR;
-		case STDOUT:
-		    System.out.print( (String)args );
-		    break;
-		case STDERR:
-		    System.err.print( (String)args );
-		    break;
-		}
-		return OK;
-	    case CREAD:   // to be implemented in assignment 4
-		return cache.read( param, ( byte[] )args ) ? OK : ERROR;
-	    case CWRITE:  // to be implemented in assignment 4
-		return cache.write( param, ( byte[] )args ) ? OK : ERROR;
-	    case CSYNC:   // to be implemented in assignment 4
-		cache.sync( );
-		return OK;
-	    case CFLUSH:  // to be implemented in assignment 4
-		cache.flush( );
-		return OK;
-	    case OPEN:    // to be implemented in project
-			// Reference only; do NOT copy:
-			/*
-			if ((myTcb = scheduler.getMyTcb()) == null)
-				return ERROR;
-			else {
-				String[] s = (String[]) args;
-				FileTableEntry ftEnt = fs.open(s[0], s[1]);
-				int fd = myTcb.getFd(ftEnt);
-				return fd;
-			}
-			*/
-			
-			/*
-			SysLib.open(filename, mode) // need to implement in SysLib, and by extension Kernel
-				if (not found in w, w+, or a)
-					create file
-				if (not found in r)
-					SysLib.open returns -1;
+					case WAIT:
+						if ( ( myTcb = scheduler.getMyTcb( ) ) != null ) {
+							int myTid = myTcb.getTid( ); // get my thread ID
+							return waitQueue.enqueueAndSleep( myTid ); //wait on my tid
+							// woken up by my child thread
+						}
+						return ERROR;
+
+					case EXIT:
+						if ( ( myTcb = scheduler.getMyTcb( ) ) != null ) {
+							int myPid = myTcb.getPid( ); // get my parent ID
+							int myTid = myTcb.getTid( ); // get my ID
+							if ( myPid != -1 ) {
+								// wake up a thread waiting on my parent ID
+								waitQueue.dequeueAndWakeup( myPid, myTid );
+								// I'm terminated!
+								scheduler.deleteThread( );
+								return OK;
+							}
+						}
+						return ERROR;
+
+					case SLEEP:   // sleep a given period of milliseconds
+						scheduler.sleepThread( param ); // param = milliseconds
+						return OK;
+
+					case RAWREAD: // read a block of data from disk
+						while ( disk.read( param, ( byte[] )args ) == false )
+							ioQueue.enqueueAndSleep( COND_DISK_REQ );
+						while ( disk.testAndResetReady( ) == false )
+							ioQueue.enqueueAndSleep( COND_DISK_FIN );
+						return OK;
+					
+					case RAWWRITE: // write a block of data to disk
+						while ( disk.write( param, ( byte[] )args ) == false )
+							ioQueue.enqueueAndSleep( COND_DISK_REQ );
+						while ( disk.testAndResetReady( ) == false )
+							ioQueue.enqueueAndSleep( COND_DISK_FIN );
+						return OK;
 				
-				if (successfully opened/created) {
-					use a file descriptor between the range 3 and 31, since
-					0-2 are already reserved for standard input, output, and error
+					case SYNC:     // synchronize disk data to a real file
+						while ( disk.sync( ) == false )
+							ioQueue.enqueueAndSleep( COND_DISK_REQ );
+						while ( disk.testAndResetReady( ) == false )
+							ioQueue.enqueueAndSleep( COND_DISK_FIN );
+						return OK;
+			
+					case READ:
+						switch ( param ) {
+						/*
+						SysLib.cin()
+							if (bytes remaining between curr seek pointer and end of file < buffer.length)
+								reads as many bytes as possible
+								puts them into the beginning of Disk's? buffer[]
+							increments the seek pointer by the number of bytes to have been read
+							return = number of bytes that have been read, or -1 if error
+						*/
+						case STDIN:
+							try {
+								String s = input.readLine(); // read a keyboard input
+								if ( s == null ) {
+									return ERROR;
+								}
+								// prepare a read buffer
+								StringBuffer buf = ( StringBuffer )args;
+
+								// append the keyboard intput to this read buffer
+								buf.append( s ); 
+
+								// return the number of chars read from keyboard
+								return s.length( );
+							} catch ( IOException e ) {
+								System.out.println( e );
+								return ERROR;
+							}
+		
+						case STDOUT:
+	
+						case STDERR:
+							System.out.println( "threaOS: caused read errors" );
+							return ERROR;
+						}
+						// return FileSystem.read( param, byte args[] );
+						return ERROR;
+	
+					case WRITE:
+						switch ( param ) {
+							/*
+							SysLib.cout()
+								increments the seek pointer by the number of bytes to be written
+								returns = number of bytes to have been written, or -1 upon error
+							*/
+							case STDIN:
+								System.out.println( "threaOS: cannot write to System.in" );
+								return ERROR;
+
+							case STDOUT:
+								System.out.print( (String)args );
+								break;
+
+							case STDERR:
+								System.err.print( (String)args );
+								break;
+						}
+						return OK;
+
+					case CREAD:   // to be implemented in assignment 4
+						return cache.read( param, ( byte[] )args ) ? OK : ERROR;
+
+					case CWRITE:  // to be implemented in assignment 4
+						return cache.write( param, ( byte[] )args ) ? OK : ERROR;
+
+					case CSYNC:   // to be implemented in assignment 4
+						cache.sync( );
+						return OK;
+
+					case CFLUSH:  // to be implemented in assignment 4
+						cache.flush( );
+						return OK;
+
+					case OPEN:    // to be implemented in project
+						myTcb = scheduler.getMyTcb();
+						if (myTcb == null)
+							return ERROR;
+						
+						else {
+							String[] s = (String[]) args;
+							String filename = s[0];
+							String mode = s[1];
+							
+							// checks if the file exists and is being opened in mode r
+							dir = fs.getDirectory();
+							if (dir.namei(filename) != -1 && mode.equals("r"))
+							//if (ftEnt.count > 1 && !mode.equals("r"))
+								return ERROR;
+								
+							FileTableEntry ftEnt = fs.open(filename, mode);
+							int fd = myTcb.getFd(ftEnt);
+							return fd;
+						}
+
+						/*
+						SysLib.open(filename, mode) // need to implement in SysLib, and by extension Kernel
+							if (not found in w, w+, or a)
+								create file
+							if (not found in r)
+								SysLib.open returns -1;
+							
+							if (successfully opened/created) {
+								use a file descriptor between the range 3 and 31, since
+								0-2 are already reserved for standard input, output, and error
+							}
+
+							if (calling thread's user file descriptor table is full) {
+								if (mode.equals("a"))
+									seek pointer is initialized to the end of the file
+								else // (mode.equals("r") || mode.equals("w") || mode.equals("w+"))
+									seek pointer is initialized to 0
+
+								SysLib.open returns -1;
+							}
+						*/
+
+					case CLOSE:   // to be implemented in project
+						return OK;
+
+					case SIZE:    // to be implemented in project
+						return OK;
+
+					case SEEK:    // to be implemented in project
+						/*
+						if (whence == SEEK_SET)
+							set the file's seek pointer to offset bytes from the beginning of the file
+						if (whence == SEEK_CUR)
+							set the file's seek pointer to += the offset (may be negative)
+						if (whence == SEEK_END)
+							set the file's seek pointer to the file size + the offset.
+							negative values or values beyond the file size set by the user
+							should be clamped by to 0 or the end of the file, respectively,
+							and still return a sucess
+						*/
+						return OK;
+
+					case FORMAT:  // to be implemented in project
+						return OK;
+
+					case DELETE:  // to be implemented in project
+						/*
+						if (currently open)
+							wait until the last open of it is closed before deletion
+							prevents additional openings while waiting
+				
+						*/
+						return OK;
+
+					case FSREAD:	// to be implemented in project
+						return OK;
+
+					case FSWRITE:	// to be implemented in project
+						return OK;
 				}
+				return ERROR;
 
-				if (calling thread's user file descriptor table is full) {
-					if (mode.equals("a"))
-						seek pointer is initialized to the end of the file
-					else // (mode.equals("r") || mode.equals("w") || mode.equals("w+"))
-						seek pointer is initialized to 0
+			case INTERRUPT_DISK: // Disk interrupts
+				// wake up the thread waiting for a service completion
+				ioQueue.dequeueAndWakeup( COND_DISK_FIN );
 
-					SysLib.open returns -1;
-				}
-			*/
-	    case CLOSE:   // to be implemented in project
-		return OK;
-	    case SIZE:    // to be implemented in project
-		return OK;
-	    case SEEK:    // to be implemented in project
-		/*
-        if (whence == SEEK_SET)
-            set the file's seek pointer to offset bytes from the beginning of the file
-        if (whence == SEEK_CUR)
-            set the file's seek pointer to += the offset (may be negative)
-        if (whence == SEEK_END)
-            set the file's seek pointer to the file size + the offset.
-             negative values or values beyond the file size set by the user
-             should be clamped by to 0 or the end of the file, respectively,
-             and still return a sucess
-        */
-		return OK;
-	    case FORMAT:  // to be implemented in project
-		return OK;
-	    case DELETE:  // to be implemented in project
-		/*
-        if (currently open)
-            wait until the last open of it is closed before deletion
-            prevents additional openings while waiting
-        */
-		return OK;
-	    }
-	    return ERROR;
-	case INTERRUPT_DISK: // Disk interrupts
-	    // wake up the thread waiting for a service completion
-	    ioQueue.dequeueAndWakeup( COND_DISK_FIN );
+				// wake up the thread waiting for a request acceptance
+				ioQueue.dequeueAndWakeup( COND_DISK_REQ );
 
-	    // wake up the thread waiting for a request acceptance
-	    ioQueue.dequeueAndWakeup( COND_DISK_REQ );
+				return OK;
 
-	    return OK;
-	case INTERRUPT_IO:   // other I/O interrupts (not implemented)
-	    return OK;
+			case INTERRUPT_IO:   // other I/O interrupts (not implemented)
+				return OK;
+		}
+		return OK;
 	}
-	return OK;
-    }
 
     // Spawning a new thread
     private static int sysExec( String args[] ) {
