@@ -9,8 +9,6 @@ import java.util.*; // SysLib_org.java
 
 public class SysLib {
     // to be implemented in project:
-    // read()
-    // write()
     public static int open(String filename, String mode ) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
                  Kernel.OPEN, 0, new String[]{filename, mode} );
@@ -34,6 +32,14 @@ public class SysLib {
     public static int delete(String filename) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
 				 Kernel.FORMAT, 0, filename );
+    }
+    public static int read(int blkNumber, byte buffer[]) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.FSREAD, blkNumber, buffer);
+    }
+    public static int write(int blkNumber, byte buffer[]) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.FSWRITE, blkNumber, buffer);
     }
 
     // boilerplate:
