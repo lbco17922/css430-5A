@@ -29,7 +29,6 @@ public class FileSystem {
             directory.bytes2directory(data);
         }
         close(dir);
-        // understanding of Directory stuff depends on familiarity with FileTable
     }
 
     void sync() {
@@ -48,7 +47,7 @@ public class FileSystem {
         }
         //if (successful)
             //return 0;
-        return -1;  // failure
+        return -1;
     }
     
     // opens the file specified by String filename in the given String mode
@@ -62,29 +61,13 @@ public class FileSystem {
             a   = append
         */
 
-        // LIONEL:
-        // Given String mode, ensure SysLib.open() is called in the inner if statement under the right circumstances
-            // JAIMI:
-            // (see inner if statement)
-        fileTableEntry entry = fileTable.falloc(filename, mode);
+        FileTableEntry entry = filetable.falloc(filename, mode);
         if(mode.equals("w") && entry != null) {
             if(!deallocAllBlocks(entry)) {
                 return null;
             }
         }
         return entry;
-        
-        // Reference only; do NOT copy:
-        /*
-        FileTableEntry ftEnt = filetable.falloc( filename, mode );
-        if ( mode.equals( "w" ) )   //  release all blocks belonging to this file
-        if ( deallocAllBlocks( ftEnt ) == false ) {
-                // JAIMI:
-                // Write the inner if statement contents; includes SysLib.open(filename), maybe more
-                return null;
-            }
-        return ftEnt; 
-        */
     }
 
     // reads up to Disk's buffer.length bytes from the file indicated by fd,
@@ -143,9 +126,9 @@ public class FileSystem {
         ftEnt.count--;
         if(ftEnt.count <= 0) {
             boolean successfulFree = this.filetable.ffree(ftEnt);
-        }
-        if(!successfulFree) {
-            return -1;
+            if(!successfulFree) {
+                return -1;
+            }
         }
         ftEnt.inode.toDisk(ftEnt.iNumber);
         return 0;
@@ -164,7 +147,6 @@ public class FileSystem {
             }
             return 0;
         }
-        return -1;
     }
 
     // returns the size in bytes of the file indicated by fd
