@@ -26,7 +26,9 @@ public class Kernel
     public final static int RAWWRITE=  6; // SysLib.rawwrite(int blk, byte b[])
     public final static int SYNC    =  7; // SysLib.sync( )
     public final static int READ    =  8; // SysLib.cin( )
+										  // SysLib.read( int blkNumber, byte[] buffer )
     public final static int WRITE   =  9; // SysLib.cout( ) and SysLib.cerr( )
+										  // SysLib.write( int blkNumber, byte[] buffer )
 
     // System calls to be added in Assignment 4
     public final static int CREAD   = 10; // SysLib.cread(int blk, byte b[])
@@ -42,8 +44,6 @@ public class Kernel
                                           //              int whence )
     public final static int FORMAT  = 18; // SysLib.format( int files )
     public final static int DELETE  = 19; // SysLib.delete( String fileName )
-	public final static int FSREAD	= 20; // SysLib.read( int blkNumber, byte[] buffer )
-	public final static int FSWRITE	= 21; // SysLib.write( int blkNumber, byte[] buffer )
 
     // Predefined file descriptors
     public final static int STDIN  = 0;
@@ -153,7 +153,7 @@ public class Kernel
 							ioQueue.enqueueAndSleep( COND_DISK_FIN );
 						return OK;
 			
-					case READ:
+					case READ: {
 						switch ( param ) {
 							case STDIN:
 								try {
@@ -180,16 +180,19 @@ public class Kernel
 								System.out.println( "threaOS: caused read errors" );
 								return ERROR;
 							}
-						// return FileSystem.read( param, byte args[] );
-						return ERROR;
+						// to be implemented in project
+						myTcb = scheduler.getMyTcb();
+						if (myTcb == null)
+							return ERROR;
+						
+						int blkNumber = param;
+						byte[] buffer = (byte[]) buffer;
+						FileTableEntry ftEnt = myTcb.getFtEnt(blkNumber);
+						return fs.read(ftEnt, buffer);
+					}
 	
-					case WRITE:
+					case WRITE: {
 						switch ( param ) {
-							/*
-							SysLib.cout()
-								increments the seek pointer by the number of bytes to be written
-								returns = number of bytes to have been written, or -1 upon error
-							*/
 							case STDIN:
 								System.out.println( "threaOS: cannot write to System.in" );
 								return ERROR;
@@ -202,7 +205,16 @@ public class Kernel
 								System.err.print( (String)args );
 								break;
 						}
-						return OK;
+						// to be implemented in project
+						myTcb = scheduler.getMyTcb();
+						if (myTcb == null)
+							return ERROR;
+						
+						int blkNumber = param;
+						byte[] buffer = (byte[]) buffer;
+						FileTableEntry ftEnt = myTcb.getFtEnt(blkNumber);
+						return fs.write(ftEnt, buffer);
+					}
 
 					case CREAD:   // to be implemented in assignment 4
 						return cache.read( param, ( byte[] )args ) ? OK : ERROR;
@@ -218,66 +230,66 @@ public class Kernel
 						cache.flush( );
 						return OK;
 
-					case OPEN:    // to be implemented in project
+					case OPEN: {	// to be implemented in project
 						myTcb = scheduler.getMyTcb();
 						if (myTcb == null)
 							return ERROR;
 						
-						else {
-							String[] s = (String[]) args;
-							String filename = s[0];
-							String mode = s[1];
-								
-							FileTableEntry ftEnt = fs.open(filename, mode);
-							int fd = myTcb.getFd(ftEnt);
-							return fd;
-						}
+						String[] s = (String[]) args;
+						String filename = s[0];
+						String mode = s[1];
+						FileTableEntry ftEnt = fs.open(filename, mode);
+						return myTcb.getFd(ftEnt);
+					}
 
-					case CLOSE:   // to be implemented in project
-						return OK;
+					case CLOSE: {	// to be implemented in project
+						myTcb = scheduler.getMyTcb();
+						if (myTcb == null)
+							return ERROR;
 
-					case SIZE:    // to be implemented in project
+						int fd = (int) args;
+						FileTableEntry ftEnt = myTcb.getFtEnt(fd);
+						if ( ftEnt == null || fs.close(ftEnt) == -1)
+							return ERROR;
 						return OK;
+					}
 
-					case SEEK:    // to be implemented in project
-						/*
-						if (whence == SEEK_SET)
-							set the file's seek pointer to offset bytes from the beginning of the file
-						if (whence == SEEK_CUR)
-							set the file's seek pointer to += the offset (may be negative)
-						if (whence == SEEK_END)
-							set the file's seek pointer to the file size + the offset.
-							negative values or values beyond the file size set by the user
-							should be clamped by to 0 or the end of the file, respectively,
-							and still return a sucess
-						*/
-						return OK;
+					case SIZE: {	// to be implemented in project
+						myTcb = scheduler.getMyTcb();
+						if (myTcb == null)
+							return ERROR;
 
-					case FORMAT:  // to be implemented in project
-						return OK;
+						int fd = (int) args;
+						FileTableEntry ftEnt = myTcb.getFtEnt(fd);
+						return fs.fsize(ftEnt);
+					}												
 
-					case DELETE:  // to be implemented in project
-						/*
-						if (currently open)
-							wait until the last open of it is closed before deletion
-							prevents additional openings while waiting
-				
-						*/
-						return OK;
+					case SEEK: {	// to be implemented in project
+						myTcb = scheduler.getMyTcb();
+						if (myTcb == null)
+							return ERROR;
+						
+						int[] n = (int[]) args;
+						int fd = n[0];
+						int offset = n[1];
+						int whence = n[2];
+						FileTableEntry ftEnt = myTcb.getFtEnt(fd);
+						return fs.seek(ftEnt, offset, whence);
+					}
 
-					case FSREAD:	// to be implemented in project
-						/*
-						SysLib.read()
-							if (bytes remaining between curr seek pointer and end of file < buffer.length)
-								reads as many bytes as possible
-								puts them into the beginning of Disk's? buffer[]
-							increments the seek pointer by the number of bytes to have been read
-							return = number of bytes that have been read, or -1 if error
-						*/
+					case FORMAT: {	// to be implemented in project
+						int fd = (int) args;
+						if (fs.format(fd) == -1)
+							return ERROR;
 						return OK;
+					}
 
-					case FSWRITE:	// to be implemented in project
+					case DELETE: {	// to be implemented in project
+						String filename = (String) args;
+						if (fs.delete(filename) == -1)
+							return ERROR;
 						return OK;
+					}
 				}
 				return ERROR;
 

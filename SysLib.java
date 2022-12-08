@@ -9,6 +9,14 @@ import java.util.*; // SysLib_org.java
 
 public class SysLib {
     // to be implemented in project:
+    public static int read(int blkNumber, byte buffer[]) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.READ, blkNumber, buffer);
+    }
+    public static int write(int blkNumber, byte buffer[]) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.WRITE, blkNumber, buffer);
+    }
     public static int open(String filename, String mode ) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
                  Kernel.OPEN, 0, new String[]{filename, mode} );
@@ -23,7 +31,7 @@ public class SysLib {
     }
     public static int seek(int fd, int offset, int whence) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
-                 Kernel.SIZE, 0, fd );
+                 Kernel.SIZE, 0, new int[]{fd, offset, whence} );
     }
     public static int format(int files) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
@@ -32,14 +40,6 @@ public class SysLib {
     public static int delete(String filename) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
 				 Kernel.FORMAT, 0, filename );
-    }
-    public static int read(int blkNumber, byte buffer[]) {
-        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
-                 Kernel.FSREAD, blkNumber, buffer);
-    }
-    public static int write(int blkNumber, byte buffer[]) {
-        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
-                 Kernel.FSWRITE, blkNumber, buffer);
     }
 
     // boilerplate:
