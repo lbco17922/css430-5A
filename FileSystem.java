@@ -20,15 +20,15 @@ public class FileSystem {
         directory = new Directory(superblock.totalInodes);
         filetable = new FileTable(directory);
 
-        FileTableEntry ftEnt = open("/", "r");
+        FileTableEntry dir = open("/", "r");
 
-        int dirSize = fsize(ftEnt);
+        int dirSize = fsize(dir);
         if(dirSize > 0) {
             byte[] data = new byte[dirSize];
-            read(ftEnt, data);
+            read(dir, data);
             directory.bytes2directory(data);
         }
-        close(ftEnt);
+        close(dir);
     }
 
     void sync() {
