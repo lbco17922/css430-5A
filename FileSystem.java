@@ -106,20 +106,31 @@ public class FileSystem {
     //  file indicated by fd, starting at the position currently indicated by
     //  the seek pointer
     int write( FileTableEntry ftEnt, byte[] buffer ) {
-        /*
-        SysLib.cout()
-            increments the seek pointer by the number of bytes to be written
-            returns = number of bytes to have been written, or -1 upon error
-        */
-                            
-        // LIONEL:
-        // Obtain StringBuffer s from FileTableEntry ftEnt and byte[] buffer
-        
-        // JAIMI:
-        //SysLib.cout(s);
-        //if (success)
-            //return 0;
-        return -1;
+        int startingOffset = ftEnt.seekPtr;
+        int fileSize = fsize(ftEnt);
+        int bufferRemaining = buffer.length;
+
+        while (ftEnt.seekPtr < fileSize && bufferRemaining > 0) {
+            // initialize temp entities
+            int tempBlockId = ftEnt.inode.findTargetBlock(ftEnt.seekPtr);
+            if (tempBlockId == -1)
+                return ftEnt.seekPtr;
+            byte[] tempBuffer = new byte[Disk.blockSize];
+            
+            // find value to increment by (the shortest of the remaining amounts)
+            int tempOffset = ftEnt.seekPtr % Disk.blockSize;
+            int blockRemaining = Disk.blockSize - tempOffset;
+            int fileRemaining = fileSize - ftEnt.seekPtr;
+            int shortestOfRemaining = Math.min(Math.min(blockRemaining, fileRemaining), bufferRemaining);
+            
+            // copy buffer to tempBuffer, write them into disk, and prepare the next loop
+            System.arraycopy(buffer, ftEnt.seekPtr, tempBuffer, tempOffset, shortestOfRemaining);
+            SysLib.rawwrite(tempBlockId, tempBuffer);
+            ftEnt.seekPtr += shortestOfRemaining;
+            bufferRemaining -= shortestOfRemaining;
+        }
+        // return total read
+        return ftEnt.seekPtr - startingOffset;
     }
 
     // updates the seek pointer corresponding to fd
