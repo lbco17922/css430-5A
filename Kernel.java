@@ -155,39 +155,31 @@ public class Kernel
 			
 					case READ:
 						switch ( param ) {
-						/*
-						SysLib.cin()
-							if (bytes remaining between curr seek pointer and end of file < buffer.length)
-								reads as many bytes as possible
-								puts them into the beginning of Disk's? buffer[]
-							increments the seek pointer by the number of bytes to have been read
-							return = number of bytes that have been read, or -1 if error
-						*/
-						case STDIN:
-							try {
-								String s = input.readLine(); // read a keyboard input
-								if ( s == null ) {
+							case STDIN:
+								try {
+									String s = input.readLine(); // read a keyboard input
+									if ( s == null ) {
+										return ERROR;
+									}
+									// prepare a read buffer
+									StringBuffer buf = ( StringBuffer )args;
+
+									// append the keyboard intput to this read buffer
+									buf.append( s ); 
+
+									// return the number of chars read from keyboard
+									return s.length( );
+								} catch ( IOException e ) {
+									System.out.println( e );
 									return ERROR;
 								}
-								// prepare a read buffer
-								StringBuffer buf = ( StringBuffer )args;
-
-								// append the keyboard intput to this read buffer
-								buf.append( s ); 
-
-								// return the number of chars read from keyboard
-								return s.length( );
-							} catch ( IOException e ) {
-								System.out.println( e );
+		
+							case STDOUT:
+		
+							case STDERR:
+								System.out.println( "threaOS: caused read errors" );
 								return ERROR;
 							}
-		
-						case STDOUT:
-	
-						case STDERR:
-							System.out.println( "threaOS: caused read errors" );
-							return ERROR;
-						}
 						// return FileSystem.read( param, byte args[] );
 						return ERROR;
 	
@@ -235,39 +227,11 @@ public class Kernel
 							String[] s = (String[]) args;
 							String filename = s[0];
 							String mode = s[1];
-							
-							// checks if the file exists and is being opened in mode r
-							dir = fs.getDirectory();
-							if (dir.namei(filename) != -1 && mode.equals("r"))
-							//if (ftEnt.count > 1 && !mode.equals("r"))
-								return ERROR;
 								
 							FileTableEntry ftEnt = fs.open(filename, mode);
 							int fd = myTcb.getFd(ftEnt);
 							return fd;
 						}
-
-						/*
-						SysLib.open(filename, mode) // need to implement in SysLib, and by extension Kernel
-							if (not found in w, w+, or a)
-								create file
-							if (not found in r)
-								SysLib.open returns -1;
-							
-							if (successfully opened/created) {
-								use a file descriptor between the range 3 and 31, since
-								0-2 are already reserved for standard input, output, and error
-							}
-
-							if (calling thread's user file descriptor table is full) {
-								if (mode.equals("a"))
-									seek pointer is initialized to the end of the file
-								else // (mode.equals("r") || mode.equals("w") || mode.equals("w+"))
-									seek pointer is initialized to 0
-
-								SysLib.open returns -1;
-							}
-						*/
 
 					case CLOSE:   // to be implemented in project
 						return OK;
@@ -302,6 +266,14 @@ public class Kernel
 						return OK;
 
 					case FSREAD:	// to be implemented in project
+						/*
+						SysLib.read()
+							if (bytes remaining between curr seek pointer and end of file < buffer.length)
+								reads as many bytes as possible
+								puts them into the beginning of Disk's? buffer[]
+							increments the seek pointer by the number of bytes to have been read
+							return = number of bytes that have been read, or -1 if error
+						*/
 						return OK;
 
 					case FSWRITE:	// to be implemented in project
