@@ -15,20 +15,20 @@ public class FileSystem {
     final int SEEK_END = 2;
 
     // constructor
-    public FileSystem(int diskBlocks) {   // where is it called?
-        superblock = new SuperBlock(diskBlocks);
+    public FileSystem(int disktemps) {   // where is it called?
+        superblock = new SuperBlock(disktemps);
         directory = new Directory(superblock.totalInodes);
         filetable = new FileTable(directory);
 
-        FileTableEntry dir = open("/", "r");
+        FileTableEntry ftEnt = open("/", "r");
 
-        int dirSize = fsize(dir);
+        int dirSize = fsize(ftEnt);
         if(dirSize > 0) {
             byte[] data = new byte[dirSize];
-            read(dir, data);
+            read(ftEnt, data);
             directory.bytes2directory(data);
         }
-        close(dir);
+        close(ftEnt);
     }
 
     void sync() {
@@ -38,15 +38,12 @@ public class FileSystem {
     // formats the contents of Disk.java's data[]
     // int files = max # of files to be created (i.e. # of inodes to be allocated)
     int format( int files ) {
-        //SysLib.format(files);   // need to implement in SysLib, and by extension Kernel
         if(files > 0) {
             this.superblock.format(files);
             this.directory = new Directory(files);
             this.filetable = new FileTable(this.directory);
             return 0;
         }
-        //if (successful)
-            //return 0;
         return -1;
     }
     
@@ -62,12 +59,12 @@ public class FileSystem {
         */
 
         FileTableEntry ftEnt = filetable.falloc(filename, mode);
-        if (ftEnt != null && mode.equals("w") && !deallocAllBlocks(ftEnt))
+        if (ftEnt != null && mode.equals("w") && !deallocAlltemps(ftEnt))
             return null;
         return ftEnt;
     }
 
-    private boolean deallocAllBlocks(FileTableEntry ftEnt) {
+    private boolean deallocAlltemps(FileTableEntry ftEnt) {
         if (ftEnt == null)
             return false;
         
@@ -78,20 +75,43 @@ public class FileSystem {
     // reads up to Disk's buffer.length bytes from the file indicated by fd,
     //  starting at the position currently indicated by the seek pointer
     int read( FileTableEntry ftEnt, byte[] buffer ) {
-        // LIONEL:
-        // Obtain StringBuffer s from FileTableEntry ftEnt and byte[] buffer
-        
-        // JAIMI:
-        //SysLib.cin(s);
-        //if (success)
-            //return 0;
-        return -1;
+        int startingOffset = ftEnt.seekPtr;
+        int fileSize = fsize(ftEnt);
+        int bufferRemaining = buffer.length;
+
+        while (ftEnt.seekPtr < fileSize && bufferRemaining > 0) {
+            // initialize temp entities and read disk into them
+            int tempBlockId = ftEnt.inode.findTargetBlock(ftEnt.seekPtr);
+            if (tempBlockId == -1)
+                return ftEnt.seekPtr;
+            byte[] tempBuffer = new byte[Disk.blockSize];
+            SysLib.rawread(tempBlockId, tempBuffer);
+            
+            // find value to increment by (the shortest of the remaining amounts)
+            int tempOffset = ftEnt.seekPtr % Disk.blockSize;
+            int blockRemaining = Disk.blockSize - tempOffset;
+            int fileRemaining = fileSize - ftEnt.seekPtr;
+            int shortestOfRemaining = Math.min(Math.min(blockRemaining, fileRemaining), bufferRemaining);
+            
+            // copy tempBuffer to buffer and prepare the next loop
+            System.arraycopy(tempBuffer, tempOffset, buffer, ftEnt.seekPtr, shortestOfRemaining);
+            ftEnt.seekPtr += shortestOfRemaining;
+            bufferRemaining -= shortestOfRemaining;
+        }
+        // return total read
+        return ftEnt.seekPtr - startingOffset;
     }
 
     // appends to the end or overwrites the contents of Disk's buffer[] to the
     //  file indicated by fd, starting at the position currently indicated by
     //  the seek pointer
     int write( FileTableEntry ftEnt, byte[] buffer ) {
+        /*
+        SysLib.cout()
+            increments the seek pointer by the number of bytes to be written
+            returns = number of bytes to have been written, or -1 upon error
+        */
+                            
         // LIONEL:
         // Obtain StringBuffer s from FileTableEntry ftEnt and byte[] buffer
         
@@ -125,9 +145,6 @@ public class FileSystem {
     //  transactions and unregisters fd from the user file descriptor table of
     //  the calling thread's TCB
     int close( FileTableEntry ftEnt ) {
-        if(ftEnt == null) {
-            return -1;
-        }
         ftEnt.count--;
         if(ftEnt.count <= 0) {
             boolean successfulFree = this.filetable.ffree(ftEnt);
