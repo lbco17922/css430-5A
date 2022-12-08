@@ -15,7 +15,7 @@ public class FileSystem {
     final int SEEK_END = 2;
 
     // constructor
-    public FileSystem(int diskBlocks) {   // where is it called?
+    public FileSystem(int diskBlocks) {
         superblock = new SuperBlock(diskBlocks);
         directory = new Directory(superblock.totalInodes);
         filetable = new FileTable(directory);
@@ -39,8 +39,8 @@ public class FileSystem {
     // int files = max # of files to be created (i.e. # of inodes to be allocated)
     int format( int files ) {
         if(files > 0) {
-            this.superblock.format(files);
-            this.directory = new Directory(files);
+            this.superblock.format(files); //format disk based on # of files
+            this.directory = new Directory(files); //update dir and filetable
             this.filetable = new FileTable(this.directory);
             return 0;
         }
@@ -135,18 +135,18 @@ public class FileSystem {
 
     // updates the seek pointer corresponding to fd
     int seek( FileTableEntry ftEnt, int offset, int whence ) {
-        if(whence == SEEK_SET) {
+        if(whence == SEEK_SET) { //set to offset # of bytes from beginning of file
             ftEnt.seekPtr = offset;
-        } else if (whence == SEEK_CUR) {
+        } else if (whence == SEEK_CUR) { //set to offset # of bytes from curr position
             ftEnt.seekPtr += offset;
-        } else if (whence == SEEK_END) {
+        } else if (whence == SEEK_END) { //set to offset # bytes from end file
             ftEnt.seekPtr = fsize(ftEnt) + offset;
         }
 
-        if(ftEnt.seekPtr > fsize(ftEnt)) {
+        if(ftEnt.seekPtr > fsize(ftEnt)) { //if exceeds file size, cap it
             ftEnt.seekPtr = fsize(ftEnt);
         }
-        if(ftEnt.seekPtr < 0) {
+        if(ftEnt.seekPtr < 0) { //if negative seek ptr, set to zero
             ftEnt.seekPtr = 0;
         }
         return ftEnt.seekPtr;
@@ -156,9 +156,9 @@ public class FileSystem {
     //  transactions and unregisters fd from the user file descriptor table of
     //  the calling thread's TCB
     int close( FileTableEntry ftEnt ) {
-        ftEnt.count--;
+        ftEnt.count--; //decrement thread count
         if(ftEnt.count <= 0) {
-            boolean successfulFree = this.filetable.ffree(ftEnt);
+            boolean successfulFree = this.filetable.ffree(ftEnt); //free from disk
             if(!successfulFree) {
                 return -1;
             }
