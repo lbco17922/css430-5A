@@ -21,10 +21,10 @@ public class FileTable {
     short iNumber = -1;
     Inode inode = null;
     while(true) {
-        iNumber = (filename.equals("/") ? 0 : dir.namei(filename));
-        if(iNumber < 0) {
+        iNumber = (filename.equals("/") ? 0 : dir.namei(filename)); //retrieve inumber
+        if(iNumber < 0) { //if file doesn't exist
             if(!mode.equals("r")) {
-                iNumber = dir.ialloc(filename);
+                iNumber = dir.ialloc(filename); //create new inode/inumber
                 inode = new Inode(iNumber);
                 inode.flag = READ;
                 break;
@@ -34,7 +34,7 @@ public class FileTable {
         } else { //inode exists
             inode = new Inode(iNumber);
             if(mode.compareTo("r") == 0) { //if the mode is r
-                if((inode.flag == USED) || (inode.flag == UNUSED)) {
+                if((inode.flag == USED) || (inode.flag == UNUSED)) { //update inode flags appropriately
                     inode.flag = USED;
                     break;
                 }
@@ -63,10 +63,10 @@ public class FileTable {
             }
         }
     }
-    inode.count++;
+    inode.count++; //increment thread count
     inode.toDisk((short) iNumber);
     FileTableEntry entry = new FileTableEntry(inode, iNumber, mode);
-    table.addElement(entry);
+    table.addElement(entry); //save entry to filetable
     return entry;
   }
 
@@ -74,14 +74,14 @@ public class FileTable {
     boolean succesfullyRemovedFromTable = table.removeElement(e);
     if (succesfullyRemovedFromTable) {
         Inode inode = e.inode;
-        if(inode.flag == READ || inode.flag == WRITE) {
+        if(inode.flag == READ || inode.flag == WRITE) { //update inode flag for pending free
             inode.flag = USED;
         } else {
             inode.flag = UNUSED;
         }
-        inode.count--;
+        inode.count--; //decrement thread count
         inode.toDisk(e.iNumber);
-        notify();
+        notify(); //notify other threads waiting for file
     }
     return succesfullyRemovedFromTable;
   }
@@ -91,6 +91,7 @@ public class FileTable {
      return table.isEmpty();
   }
 
+  //Helper method to retrieve inode reference for file table entry
   public synchronized Inode retrieveInodeRef(short iNumber) {
     for(int i = 0; i < this.table.size(); i++) {
         FileTableEntry tempFte = table.elementAt(i);
@@ -99,5 +100,5 @@ public class FileTable {
         }
     }
     return null;
-  }
+   }
 }
