@@ -40,7 +40,7 @@ public class FileSystem {
     int format( int files ) {
         //SysLib.format(files);   // need to implement in SysLib, and by extension Kernel
         if(files > 0) {
-            SysLib.format(files);
+            this.superblock.format(files);
             this.directory = new Directory(files);
             this.filetable = new FileTable(this.directory);
             return 0;
