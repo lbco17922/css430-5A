@@ -31,13 +31,8 @@ public class FileSystem {
         close(dir);
     }
 
-    // needed for Kernel checks
-    Directory getDirectory() {
-        return directory;
-    }
-
     void sync() {
-        // optional?  not mentioned by Prog5.pdf
+        // optional?  not mentioned by Test5.java or Prog5.pdfx
     }
 
     // formats the contents of Disk.java's data[]
@@ -67,38 +62,17 @@ public class FileSystem {
         */
 
         FileTableEntry ftEnt = filetable.falloc(filename, mode);
-        if (mode.equals("w") && ftEnt != null) {
-            if(!deallocAllBlocks(ftEnt)) {
-                return null;
-            }
-        }
+        if (ftEnt != null && mode.equals("w") && !deallocAllBlocks(ftEnt))
+            return null;
         return ftEnt;
+    }
 
-        FileTableEntry ftEnt = fileTable.falloc(filename, mode);
-        if (!mode.equals("r"))
-            return -1;
+    private boolean deallocAllBlocks(FileTableEntry ftEnt) {
+        if (ftEnt == null)
+            return false;
         
-        /*
-        SysLib.open(filename, mode) // need to implement in SysLib, and by extension Kernel
-            if (not found in w, w+, or a)
-                create file
-            if (not found in r)
-                SysLib.open returns -1;
-            
-            if (successfully opened/created) {
-                use a file descriptor between the range 3 and 31, since
-                0-2 are already reserved for standard input, output, and error
-            }
-
-            if (calling thread's user file descriptor table is full) {
-                if (mode.equals("a"))
-                    seek pointer is initialized to the end of the file
-                else // (mode.equals("r") || mode.equals("w") || mode.equals("w+"))
-                    seek pointer is initialized to 0
-
-                SysLib.open returns -1;
-            }
-        */
+        // deallocate them...somehow
+        return true;
     }
 
     // reads up to Disk's buffer.length bytes from the file indicated by fd,
