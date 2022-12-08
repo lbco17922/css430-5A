@@ -15,8 +15,8 @@ public class FileSystem {
     final int SEEK_END = 2;
 
     // constructor
-    public FileSystem(int disktemps) {   // where is it called?
-        superblock = new SuperBlock(disktemps);
+    public FileSystem(int diskBlocks) {   // where is it called?
+        superblock = new SuperBlock(diskBlocks);
         directory = new Directory(superblock.totalInodes);
         filetable = new FileTable(directory);
 
@@ -59,12 +59,12 @@ public class FileSystem {
         */
 
         FileTableEntry ftEnt = filetable.falloc(filename, mode);
-        if (ftEnt != null && mode.equals("w") && !deallocAlltemps(ftEnt))
+        if (ftEnt != null && mode.equals("w") && !deallocAllBlocks(ftEnt))
             return null;
         return ftEnt;
     }
 
-    private boolean deallocAlltemps(FileTableEntry ftEnt) {
+    private boolean deallocAllBlocks(FileTableEntry ftEnt) {
         if (ftEnt == null)
             return false;
         
