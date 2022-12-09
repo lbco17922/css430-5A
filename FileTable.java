@@ -1,3 +1,8 @@
+/*
+Part of CSS 430 Program 5: File System
+	Implemented by Lionel Cheng.
+	Last edited on 12/04/22.
+*/
 import java.util.Vector;
 /*
 Maintains the file table shared among all user threads.
