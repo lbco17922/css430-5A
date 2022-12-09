@@ -10,7 +10,7 @@ public class SuperBlock {
     public int totalInodes;     // the number of inodes
     public int freeList;        // the block number of the free list's head (zyBooks "free-frame list")
     //private final int defaultInodeBlocks = 64;  // optional? only appears in constr format() call
-    Inode[] inodes;             // probably move this to FileSystem later
+    Inode[] inodes;             // tracks the inodes
 
     public SuperBlock(int diskBlocks) {
         byte[] blocks = new byte[Disk.blockSize];
@@ -19,14 +19,14 @@ public class SuperBlock {
         totalInodes = SysLib.bytes2int(blocks, 4);
         freeList    = SysLib.bytes2int(blocks, 8);
 
-        if (totalBlocks == diskBlocks) //&& totalInodes > 0 && freeList >= 2)   ...why these?
+        if (totalBlocks == diskBlocks && totalInodes > 0 && freeList >= 0)
             // disk contents are valid
             return;
         else {
             // disk contents must be formatted
             totalBlocks = diskBlocks;
             format();
-            //format(defaultInodeBlocks);
+            //format(defaultInodeBlocks);   // see private final defaultInodeBlocks comment
         }        
     }
 
@@ -42,24 +42,24 @@ public class SuperBlock {
     
     // typically called with 16 passed for int numBlocks?
     void format( ) {
-        format(0);  //?
+        format(0);
     }
     void format( int numBlocks ) {
         //initialize Inodes
         inodes = new Inode[numBlocks];
         for (short iNumber = 0; iNumber < numBlocks; iNumber++) {
             inodes[iNumber] = new Inode(iNumber);
-            getFreeBlock(); // free block
+            getFreeBlock(); // free a block
         }
     }
     
+    // dequeue top block in freelist
     public int getFreeBlock( ) {
-        // dequeue top block in freelist
         return freeList++;
     }
     
+    // enqueue oldBlockNumber to top of freelist
     public boolean returnBlock( int oldBlockNumber ) {
-        // enqueue oldBlockNumber to top of freelist
         if (freeList == oldBlockNumber - 1) {
             freeList--;
             return true;
