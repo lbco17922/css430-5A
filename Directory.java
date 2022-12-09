@@ -58,11 +58,10 @@ public class Directory {
 		int totalOffset = 4 + (2 * maxChars);
 		byte[] data = new byte[fsizes.length * totalOffset];
 		
-		int i;
 		int intOffset = 0;
 		int charOffset = fsizes.length;
 
-		for (i = 0; i < fsizes.length; i++, intOffset += 4, charOffset += 2 * maxChars) {
+		for (int i = 0; i < fsizes.length; i++, intOffset += 4, charOffset += 2 * maxChars) {
 			SysLib.int2bytes(fsizes[i], data, intOffset);
 
 			String fname = new String(fnames[i], 0, fsizes[i]);

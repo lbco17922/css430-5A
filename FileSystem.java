@@ -31,8 +31,10 @@ public class FileSystem {
         close(dir);
     }
 
+    // supposedly syncs Disk.java, directory, and fileTable to changes made in
+    //  deallocAllBlocks(), another function we didn't believe necessary below.
     void sync() {
-        // optional?  not mentioned by Test5.java or Prog5.pdfx
+        // optional?  not mentioned by Test5.java or Prog5.pdf
     }
 
     // formats the contents of Disk.java's data[]
@@ -59,11 +61,15 @@ public class FileSystem {
         */
 
         FileTableEntry ftEnt = filetable.falloc(filename, mode);
-        if (ftEnt != null && mode.equals("w") && !deallocAllBlocks(ftEnt))
+        if (ftEnt != null && mode.equals("w") /*&& !deallocAllBlocks(ftEnt)*/)
             return null;
         return ftEnt;
     }
 
+    // supposedly deallocates all blocks using SuperBlock, and informs relevant
+    //  files or instances through sync(), though we weren't sure why such was
+    //  necessary for checking if a file entry was null in open().
+    /*
     private boolean deallocAllBlocks(FileTableEntry ftEnt) {
         if (ftEnt == null)
             return false;
@@ -71,6 +77,7 @@ public class FileSystem {
         // deallocate them...somehow
         return true;
     }
+    */
 
     // reads up to Disk's buffer.length bytes from the file indicated by fd,
     //  starting at the position currently indicated by the seek pointer
@@ -129,7 +136,7 @@ public class FileSystem {
             ftEnt.seekPtr += shortestOfRemaining;
             bufferRemaining -= shortestOfRemaining;
         }
-        // return total read
+        // return total written
         return ftEnt.seekPtr - startingOffset;
     }
 
