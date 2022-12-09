@@ -16,8 +16,8 @@ public class SuperBlock {
         byte[] blocks = new byte[Disk.blockSize];
         SysLib.rawread( 0, blocks );
         totalBlocks = SysLib.bytes2int(blocks, 0);
-        totalInodes = SysLib.bytes2int(blocks, 4);  // figure how we know offset
-        freeList    = SysLib.bytes2int(blocks, 8);  // figure how we know offset
+        totalInodes = SysLib.bytes2int(blocks, 4);
+        freeList    = SysLib.bytes2int(blocks, 8);
 
         if (totalBlocks == diskBlocks) //&& totalInodes > 0 && freeList >= 2)   ...why these?
             // disk contents are valid
@@ -34,8 +34,8 @@ public class SuperBlock {
     void sync() {
         byte[] blocks = new byte[Disk.blockSize];
         SysLib.int2bytes(totalBlocks, blocks, 0);
-        SysLib.int2bytes(totalInodes, blocks, 4);   // figure how we know offset
-        SysLib.int2bytes(freeList, blocks, 8);      // figure how we know offset
+        SysLib.int2bytes(totalInodes, blocks, 4);
+        SysLib.int2bytes(freeList, blocks, 8);
         SysLib.rawwrite( 0, blocks );
     }
     

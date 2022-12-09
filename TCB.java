@@ -1,3 +1,10 @@
+/*
+Acknowledgements:
+    File provided in Prog5.pdf by Prof. Robert Palmer
+    Lines 27-29 added by Jaimi Chong
+    Last edited on 12/07/2022
+*/
+
 public class TCB {
     private Thread thread = null;
     private int tid = 0;
