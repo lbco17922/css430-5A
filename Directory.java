@@ -2,7 +2,7 @@
 Acknowledgements:
 	Boilerplate provided in Prog5.pdf by Prof. Robert Palmer
 	Implemented by Jaimi Chong
-	Last edited on 12/04/22
+	Last edited on 12/08/22
 */
 
 public class Directory {
@@ -12,73 +12,69 @@ public class Directory {
 	private int fsizes[];		// each element stores a different file size.
 	private char fnames[][];	// each element stores a different file name.
 	
-	public Directory( int maxInumber ) {		// directory constructor
-		fsizes = new int[maxInumber]; 			// maxInumber = max files
-		for ( int s = 0; s < maxInumber; s++ )
-			fsizes[s] = 0;					// all file size initialized to 0
+	public Directory( int maxInumber ) {
+		fsizes = new int[maxInumber]; 						// maxInumber = max files
+		for ( int s = 0; s < maxInumber; s++ ) {
+			fsizes[s] = 0;									// all file size initialized to 0
 			fnames = new char[maxInumber][maxChars];
-			String root = "/";				// entry(inode) 0 is "/"
-			fsizes[0] = root.length( );		// fsizes[0] is the size of "/".
-			root.getChars( 0, fsizes[0], fnames[0], 0 );// fnames[0] includes "/"
+			String root = "/";								// entry(inode) 0 is "/"
+			fsizes[0] = root.length( );						// fsizes[0] is the size of "/".
+			root.getChars( 0, fsizes[0], fnames[0], 0 );	// fnames[0] includes "/"
 		}
+	}
 	
+	// assumes data[] received directory information from disk
+	// initializes the Directory instance with this data[]
 	public int bytes2directory( byte data[] ) {
-		// assumes data[] received directory information from disk
-		// initializes the Directory instance with this data[]
-
-		int max;
-		if (data.length <= fsizes.length)
-			max = data.length;
-		else
-			max = fsizes.length;
+		// offset accounts for the data's structure, which follows the following pattern:
+		// { fsize[0] 			| fsize[1] 			 | ... | fsize[fsize.length-1] |
+		//	 fname[0][maxChars] | fsize[1][maxChars] | ... | fname[fname.length-1][maxChars] }
 		
-		int intOffset = 0;
-		int charOffset = 0;
-		for (int s = 0; s < max; s++, intOffset += 4, charOffset += 2) {
-			fsizes[s] = SysLib.bytes2int(data, intOffset);
-			fnames[s] = new char[maxChars];	// placeholder (see below)
+		// vars incremented in loop below
+		int i;								// offset incrementation based on:
+		int intOffset = 0;					// 1 int  = 4 bytes
+		int charOffset = fsizes.length;		// 1 char = 2 bytes
 
-			/*
-			Dependent on FileSystem.java implementation in order to figure:
-			- why the offset 4(fsizes.length - 1) is where the data for fnames
-			  start in data[]
-			- how much to increment offset for char, if not simply by 2 to match
-			  1 char = 2 bytes
-			*/
+		for (i = 0; i < fsizes.length; i++, intOffset += 4, charOffset += 2 * maxChars) {
+			fsizes[i] = SysLib.bytes2int(data, intOffset);
+			
+			String fname = new String(data, charOffset, maxChars);
+			fname.getChars(0, fsizes[i], fnames[i], 0);
 		}
-
-		return max;
-
-		// Reference (can't copy):
-		/*
-		int offset = 0;
-		for ( int s = 0; s < fsizes.length; s++, offset+=4 )
-			fsizes[s] = SysLib.bytes2int( data, offset );
-		for ( int s = 0; s < fnames.length; s++, offset += maxChars * 2 ) {
-			String fname = new String( data, offset, maxChars * 2 );
-			fname.getChars( 0, fsizes[s], fnames[s], 0 );
-		}
-		*/
+		
+		// checks if fsizes and fnames were fully populated
+		if (i == fsizes.length)
+			return 0;
+		return -1;
 	}
 	
+	// converts and return Directory information into a plain byte array
+	//  this byte array will be written back to disk
+	// note: only meaningful directory information should be converted
+	//  into bytes.
 	public byte[] directory2bytes( ) {
-		// converts and return Directory information into a plain byte array
-		// this byte array will be written back to disk
-		// note: only meaningfull directory information should be converted
-		// into bytes.
+		// initialize byte[] to return
+		// see bytes2directory() for explanations on data's structure and offset incrememntation
+		int totalOffset = 4 + (2 * maxChars);
+		byte[] data = new byte[fsizes.length * totalOffset];
+		
+		int i;
+		int intOffset = 0;
+		int charOffset = fsizes.length;
 
-		byte[] data = new byte[fnames.length];
-		//for (int s = 0; s < data.length; s++)
-			//data[s] = ;
+		for (i = 0; i < fsizes.length; i++, intOffset += 4, charOffset += 2 * maxChars) {
+			SysLib.int2bytes(fsizes[i], data, intOffset);
+
+			String fname = new String(fnames[i], 0, fsizes[i]);
+			byte[] tempData = fname.getBytes();
+			System.arraycopy(tempData, 0, data, charOffset, tempData.length)
+		}
 		return data;
-
-		// Dependent on FileSystem.java implementation (see bytes2directory() comments)
 	}
 	
+	// filename is the one of a file to be created.
+	// allocates a new inode number for this filename (-1 if none)
 	public short ialloc( String filename ) {
-		// filename is the one of a file to be created.
-		// allocates a new inode number for this filename (-1 if none)
-		
 		// finds the first empty iNumber to populate
 		short iNumber = -1;
 		for (short s = 0; s < fsizes.length; s++) {
@@ -105,10 +101,9 @@ public class Directory {
 		return iNumber;
 	}
 	
+	// deallocates this inumber (inode number)
+	// the corresponding file will be deleted.
 	public boolean ifree( short iNumber ) {
-		// deallocates this inumber (inode number)
-		// the corresponding file will be deleted.
-		
 		if (iNumber > fsizes.length || fsizes[iNumber] == 0)
 			return false;
 		
@@ -117,9 +112,8 @@ public class Directory {
 		return true;
 	}
 	
+	// returns the inumber corresponding to this filename (-1 if none)
 	public short namei( String filename ) {
-		// returns the inumber corresponding to this filename (-1 if none)
-		
 		for (short s = 0; s < fsizes.length; s++) {
 			if (fnames[s].toString().equals(filename))
 				return s;
