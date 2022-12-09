@@ -61,7 +61,6 @@ public class Kernel
 
 	// System thread references to be added in Project
 	private static FileSystem fs;
-	private static Directory dir;
 	
 	// Global constant used to construct this thread's disk and fs
 	public final static int DISK_BLOCKS = 1000;
