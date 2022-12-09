@@ -1,9 +1,19 @@
+/*
+Acknowledgements:
+    File provided in Prog5.pdf by Prof. Robert Palmer
+    Lines 27-29 added by Jaimi Chong
+    Last edited on 12/07/2022
+*/
+
 public class TCB {
     private Thread thread = null;
     private int tid = 0;
     private int pid = 0;
     private boolean terminated = false;
     private int sleepTime = 0;
+	
+	// User file descriptor table:
+	// each entry pointing to a file (structure) table entry
     public FileTableEntry[] ftEnt = null; // added for the file system
 
     public TCB( Thread newThread, int myTid, int parentTid ) {
@@ -12,7 +22,11 @@ public class TCB {
 	pid = parentTid;
 	terminated = false;
 
+	// The following code is added for the file system
 	ftEnt = new FileTableEntry[32];    // added for the file system
+	for( int i = 0; i < 32; i++ )	
+		ftEnt[i] = null;				// fd[0], fd[1], and fd[2] are kept null
+										// to not conflict with Kernel system calls
 
 	System.err.println( "threadOS: a new thread (thread=" + thread + 
 			    " tid=" + tid + 

@@ -1,6 +1,48 @@
+/*
+Acknowledgements:
+	Boilerplate provided by Prof. Robert Palmer
+	"to be implemented in project" (Ctrl+F) implemented by Jaimi Chong
+	Last edited on 12/07/22
+*/
+
 import java.util.*; // SysLib_org.java
 
 public class SysLib {
+    // to be implemented in project:
+    public static int read(int blkNumber, byte buffer[]) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.READ, blkNumber, buffer);
+    }
+    public static int write(int blkNumber, byte buffer[]) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.WRITE, blkNumber, buffer);
+    }
+    public static int open(String filename, String mode ) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.OPEN, 0, new String[]{filename, mode} );
+    }
+    public static int close(int fd) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.CLOSE, 0, fd );
+    }
+    public static int size(int fd) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.SIZE, 0, fd );
+    }
+    public static int seek(int fd, int offset, int whence) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                 Kernel.SIZE, 0, new int[]{fd, offset, whence} );
+    }
+    public static int format(int files) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+				 Kernel.FORMAT, 0, files );
+    }
+    public static int delete(String filename) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+				 Kernel.FORMAT, 0, filename );
+    }
+
+    // boilerplate:
     public static int exec( String args[] ) {
         return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
 				 Kernel.EXEC, 0, args );
